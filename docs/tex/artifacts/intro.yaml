@@ -132,3 +132,20 @@ content:
               `SetupStoragePermissions.ps1`, then use the federated identity
               credential to obtain an access token and read blob data. Use
               `UnassignStoragePermission.ps1` to remove the role assignment.
+
+  - type: image
+    src: ./docs/images/blueprint-composition.drawio.png
+    caption: Composition of an agent blueprint
+    label: fig:blueprint-composition
+    width: '0.6\textwidth'
+  - type: paragraph
+    text: >
+      *Figure \ref{fig:blueprint-composition}* illustrates the composition of an
+      agent blueprint. A blueprint functions as a declarative template that
+      defines the configuration and permissions governing agent identities. At
+      its core, the blueprint comprises an application registration in Azure
+      Entra ID and may encompass multiple agent identities provisioned from it.
+      Each agent identity is bound to its parent blueprint and inherits the
+      associated configuration, including permissions and federated identity
+      credentials. This hierarchical model enables centralized, consistent
+      management of agent identities and their access to Azure resources.

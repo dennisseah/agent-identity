@@ -182,6 +182,16 @@ Use \texttt{RemoveIdentifierURI.ps1} and \texttt{RemoveScope.ps1} to remove the 
 %
 \end{itemize}%
 \vspace{\baselineskip}%
+\begin{figure}[htbp]%
+\centering
+\includegraphics[width=0.6\textwidth]{./docs/images/blueprint-composition.drawio.png}%
+\caption{Composition of an agent blueprint}%
+\label{fig:blueprint-composition}%
+\end{figure}%
+\vspace{\baselineskip}%
+\textit{Figure \ref{fig:blueprint-composition}} illustrates the composition of an agent blueprint. A blueprint functions as a declarative template that defines the configuration and permissions governing agent identities. At its core, the blueprint comprises an application registration in Azure Entra ID and may encompass multiple agent identities provisioned from it. Each agent identity is bound to its parent blueprint and inherits the associated configuration, including permissions and federated identity credentials. This hierarchical model enables centralized, consistent management of agent identities and their access to Azure resources.
+%
+\par\vspace{\baselineskip}%
 \section{Azure Agent Blueprint}%
 \label{sec:agent_blueprint}%
 In \textit{Azure Entra ID}, an \textit{agent blueprint} is a reusable template that defines the configuration, capabilities, and permissions for a specific type of autonomous agent. Every agent identity in \textit{Azure Entra ID} must originate from a blueprint, which acts as the parent management object. The blueprint specifies the App Roles and Microsoft Graph permissions (scopes) that all instances created from it are allowed to request, preventing individual agents from drifting into over-privileged states. Crucially, blueprints hold the credentials used for authentication. Individual agent instances do not carry their own secrets; they use the blueprint to request access tokens, which reduces \textit{service principal sprawl}. If an administrator disables a blueprint, it immediately prevents the creation of new agents and can be used to halt functionality for all associated child identities across the organization. Once a blueprint is deleted, all child identities are also deleted, and any tokens issued to those identities become invalid.
