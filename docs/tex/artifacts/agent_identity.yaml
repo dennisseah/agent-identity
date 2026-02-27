@@ -1,0 +1,98 @@
+---
+title: Azure Agent Identity
+content:
+  - type: paragraph
+    text: >
+      In *Azure Entra ID*, an *agent identity* is a first-class security
+      principal assigned to an autonomous agent---a software entity that
+      performs tasks and makes decisions without human intervention. This
+      identity enables the agent to authenticate, obtain authorization tokens,
+      and interact with resources across the Azure ecosystem. Agent identities
+      are foundational to ensuring that autonomous agents operate under
+      well-defined permissions while adhering to organizational security and
+      compliance policies.
+  - type: paragraph
+    text: >
+      Each agent identity is derived from a parent *agent blueprint* (see
+      \S\ref{sec:agent_blueprint}) that defines the permissions, capabilities,
+      and credential management strategy for all child identities. This
+      hierarchical relationship enables centralized governance, allowing
+      organizations to enforce consistent security policies across all agents
+      derived from the same blueprint. By leveraging agent identities,
+      organizations can implement the principle of least privilege, granting
+      agents only the access necessary to perform their designated tasks and
+      reducing the overall attack surface.
+  - type: paragraph
+    text: >
+      Each agent identity is associated with a unique identifier that serves as
+      the basis for permission management and access control. Organizations can
+      leverage this identifier to enforce fine-grained authorization policies,
+      restricting agents to the minimum set of resources required for their
+      designated tasks. Additionally, agent identities provide a durable audit
+      trail, enabling organizations to trace agent actions, analyze behavioral
+      patterns, and maintain accountability throughout the system lifecycle.
+  - type: paragraph
+    text: >
+      Currently, creating and managing agent identities in *Azure Entra ID*
+      requires familiarity with *PowerShell* and the *Microsoft Graph PowerShell
+      SDK*. However, we envision a future state where agent identities can be
+      programmatically created, managed, and rotated at scale, with seamless
+      integration into the agent development lifecycle and DevOps pipelines.
+      This would empower organizations to rapidly onboard new agents, enforce
+      security best practices automatically, and maintain robust governance as
+      the number of agents grows.
+  - type: paragraph
+    subsection: "Sample PowerShell Script for Creating an Agent Identity"
+    text: >
+      [`scripts/CreateAgentIdentity.ps1`](https://github.com/dennisseah/agent-identity/blob/main/scripts/CreateAgentIdentity.ps1)
+      is a sample script that demonstrates how to create an agent identity in
+      *Azure Entra ID* using PowerShell. The script requires the following
+      parameters: `$tenant_id` (the Azure tenant ID), `$agent_id_name` (the
+      display name for the new identity), `$blueprint_app_id` (the app ID of the
+      parent blueprint), `$client_secret` (the blueprint's client secret for
+      token acquisition), and `$sponsor_user_id` (the object ID of the
+      sponsoring user). These can be passed as script parameters or set as
+      session variables. The script authenticates to Microsoft Graph with the
+      necessary permissions, acquires a blueprint token via client credentials,
+      checks for existing identities with the same name, and issues a POST
+      request to the Microsoft Graph beta endpoint to create the agent identity.
+      It serves as a reference implementation for provisioning agent identities,
+      which can be further automated in the future.
+  - type: paragraph
+    text: >
+      Each blueprint supports a defined quota of child agent identities. If your
+      use case requires additional identities beyond the default limit, contact
+      Microsoft support to request a quota increase. While duplicate display
+      names are permitted, using unique names for each agent identity is
+      recommended for improved manageability and traceability.
+  - type: paragraph
+    text: >
+      After the script creates the agent identity, the entry may not appear
+      immediately in the list of identities due to eventual consistency in the
+      system. However, the identity is functional and can be used for
+      authentication and authorization as soon as the creation API call returns
+      successfully. The app ID and object ID displayed in the console output can
+      be used immediately, and the identity will become visible in subsequent
+      list queries after a brief propagation delay.
+  - type: paragraph
+    subsection: "Sample PowerShell Script for Listing Agent Identities"
+    text: >
+      [`scripts/ListAgentIdentities.ps1`](https://github.com/dennisseah/agent-identity/blob/main/scripts/ListAgentIdentities.ps1)
+      is a sample script that demonstrates how to list all agent identities in
+      *Azure Entra ID* using PowerShell. It retrieves agent identities from the
+      Microsoft Graph beta endpoint and displays them as formatted JSON output.
+      It serves as a reference implementation for enumerating agent identities,
+      which can be further automated in the future.
+  - type: paragraph
+    subsection: "Sample PowerShell Script for Deleting Agent Identities"
+    text: >
+      [`scripts/DeleteAgentIdentities.ps1`](https://github.com/dennisseah/agent-identity/blob/main/scripts/DeleteAgentIdentities.ps1)
+      is a sample script that demonstrates how to delete agent identities by
+      display name in *Azure Entra ID* using PowerShell. The `$agent_id_name`
+      parameter specifies the display name of the identities to delete and can
+      be passed as a script parameter or set as a session variable. The script
+      retrieves all agent identities from the Microsoft Graph beta endpoint,
+      filters those matching the specified display name, and issues DELETE
+      requests to remove each matching identity. It serves as a reference
+      implementation for deprovisioning agent identities, which can be further
+      automated in the future.

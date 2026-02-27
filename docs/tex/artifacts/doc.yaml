@@ -1,0 +1,88 @@
+---
+title: Agent Identity and Blueprint
+author:
+  - Dennis Seah|dennis.seah
+affiliation: Microsoft Corporation
+email_domain: microsoft.com
+output_file: paper
+
+revision_history:
+  - version: "0.9.0"
+    date: "2026-02-26"
+    description:
+      - "Initial draft"
+
+geometry_options:
+  top: "1.2in"
+  bottom: "1.2in"
+  left: "1.2in"
+  right: "1.2in"
+
+preamble:
+  # Remove paragraph indentation
+  - '\setlength{\parindent}{0pt}'
+  # Make section, subsection, and subsubsection titles not bold
+  - '\usepackage{titlesec}'
+  - '\titleformat{\section}{\normalfont\Large}{\thesection}{1em}{}'
+  - '\titleformat{\subsection}{\normalfont\large}{\thesubsection}{1em}{}'
+  - '\titleformat{\subsubsection}{\normalfont\normalsize}{\thesubsubsection}{1em}{}'
+  # Make abstract title italic, not bold
+  - '\usepackage{abstract}'
+  - '\renewcommand{\abstractnamefont}{\normalfont\itshape}'
+  # For itemize spacing control
+  - '\usepackage{enumitem}'
+  # For including images
+  - '\usepackage{graphicx}'
+  # For exact figure placement [H]
+  - '\usepackage{float}'
+  # For caption styling (italic and small)
+  - '\usepackage{caption}'
+  - '\captionsetup{font={it,small}}'
+  # For headers and footers
+  - '\usepackage{fancyhdr}'
+  - '\pagestyle{fancy}'
+  - '\fancyhf{}'
+  - '\fancyhead[R]{\textit{\thepage}}'
+  - '\fancyfoot[C]{\small \textit{Internal Use Only}}'
+  - '\renewcommand{\headrulewidth}{0.4pt}'
+  # Allow line breaks inside \texttt (monospaced) text
+  - '\usepackage[htt]{hyphenat}'
+  # For verbatim blocks inside itemize environments
+  - '\usepackage{fancyvrb}'
+  # For URLs in references
+  - '\usepackage{url}'
+  - '\usepackage{hyperref}'
+  - '\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue,citecolor=blue}'
+  # Make TOC entries not bold
+  - '\usepackage{tocloft}'
+  - '\renewcommand{\cftsecfont}{\normalfont}'
+  - '\renewcommand{\cftsecpagefont}{\normalfont}'
+  - '\renewcommand{\cfttoctitlefont}{\normalfont\Large}'
+  # Left-align title and references (combined makeatletter block)
+  - '\makeatletter'
+  - '\renewcommand{\refname}{\raggedright\normalfont References}'
+  - '\makeatother'
+
+content:
+  - intro.yaml
+  - agent_blueprint.yaml
+  - agent_identity.yaml
+  - managed_identity.yaml
+  - federated_identity_credential.yaml
+  - configure_identifier_uri_scopes.yaml
+  - grant_data_contributor_role.yaml
+
+abstract: >
+  This document presents an approach to provisioning and governing agent
+  identities in *Azure Entra ID*. It addresses the end-to-end workflow,
+  beginning with the creation of agent blueprints that define metadata such as
+  display names, descriptions, and tags, followed by the registration of
+  corresponding application objects and service principals via the Microsoft
+  Graph API. It then covers provisioning user-assigned managed identities in
+  Azure and establishing federated identity credentials that enable passwordless
+  authentication through OpenID Connect. Additional sections describe how to
+  configure identifier URIs and expose custom OAuth2 permission scopes, as well
+  as how to assign Azure RBAC roles—such as Storage Blob Data Reader—to grant
+  agents least-privilege access to cloud resources. Reference PowerShell scripts
+  accompany each topic, offering ready-to-use automation for every stage of the
+  process.

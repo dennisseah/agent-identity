@@ -1,0 +1,85 @@
+---
+title: Azure Agent Blueprint
+label: "sec:agent_blueprint"
+content:
+  - type: paragraph
+    text: >
+      In *Azure Entra ID*, an *agent blueprint* is a reusable template that
+      defines the configuration, capabilities, and permissions for a specific
+      type of autonomous agent. Every agent identity in *Azure Entra ID* must
+      originate from a blueprint, which acts as the parent management object.
+      The blueprint specifies the App Roles and Microsoft Graph permissions
+      (scopes) that all instances created from it are allowed to request,
+      preventing individual agents from drifting into over-privileged states.
+      Crucially, blueprints hold the credentials used for authentication.
+      Individual agent instances do not carry their own secrets; they use the
+      blueprint to request access tokens, which reduces *service principal
+      sprawl*. If an administrator disables a blueprint, it immediately prevents
+      the creation of new agents and can be used to halt functionality for all
+      associated child identities across the organization. Once a blueprint is
+      deleted, all child identities are also deleted, and any tokens issued to
+      those identities become invalid.
+  - type: paragraph
+    text: >
+      Currently, creating and managing agent blueprints in *Azure Entra ID*
+      requires familiarity with *PowerShell* and the *Microsoft Graph PowerShell
+      SDK*. However, we envision a future state where agent blueprints can be
+      programmatically created, managed, and rotated at scale, with seamless
+      integration into the agent development lifecycle and DevOps pipelines.
+      This would empower organizations to rapidly onboard new agents, enforce
+      security best practices automatically, and maintain robust governance as
+      the number of agents grows.
+  - type: paragraph
+    subsection: "Sample PowerShell Script for Creating an Agent Blueprint"
+    text: >
+      [`scripts/CreateAgentBlueprint.ps1`](https://github.com/dennisseah/agent-identity/blob/main/scripts/CreateAgentBlueprint.ps1)
+      is a sample script that demonstrates how to create an agent blueprint in
+      *Azure Entra ID* using PowerShell. The script requires the following
+      parameters: `$tenant_id` (the Azure tenant ID where the blueprint will be
+      created) and `$blueprint_name` (the display name for the new blueprint).
+      These can be passed as script parameters or set as session variables. The
+      script authenticates to Microsoft Graph with the necessary permissions,
+      checks for existing blueprints with the same name, constructs the request
+      body with the specified blueprint name and current user as sponsor and
+      owner, and issues a POST request to the Microsoft Graph beta endpoint to
+      create the blueprint. It serves as a reference implementation for
+      provisioning agent blueprints, which can be further automated in the
+      future.
+  - type: paragraph
+    text: >
+      Upon successful creation, the script outputs the app ID and object ID of
+      the new blueprint. A service principal is automatically provisioned for
+      the blueprint, and its object ID is included in the console output. Note
+      that blueprint credentials are not retrievable after creation; ensure that
+      the app ID and object ID are securely stored for future reference.
+  - type: paragraph
+    text: >
+      Each tenant supports a defined quota of blueprints, and each blueprint can
+      have up to a defined number of child identities. If your use case requires
+      additional blueprints or identities beyond the default limits, contact
+      Microsoft support to request a quota increase. While duplicate display
+      names are permitted, using unique names for each blueprint is recommended
+      for improved manageability and traceability.
+  - type: paragraph
+    subsection: "Sample PowerShell Script for Listing Agent Blueprints"
+    text: >
+      [`scripts/ListAgentBlueprints.ps1`](https://github.com/dennisseah/agent-identity/blob/main/scripts/ListAgentBlueprints.ps1)
+      is a sample script that demonstrates how to list all agent blueprints in
+      *Azure Entra ID* using PowerShell. It retrieves blueprints from the
+      Microsoft Graph beta endpoint and displays them as formatted JSON output.
+      It serves as a reference implementation for enumerating agent blueprints,
+      which can be further automated in the future.
+  - type: paragraph
+    subsection: "Sample PowerShell Script for Deleting Agent Blueprints"
+    text: >
+      [`scripts/DeleteAgentBlueprints.ps1`](https://github.com/dennisseah/agent-identity/blob/main/scripts/DeleteAgentBlueprints.ps1)
+      is a sample script that demonstrates how to delete agent blueprints by
+      display name in *Azure Entra ID* using PowerShell. The `$blueprint_name`
+      parameter specifies the display name of the blueprints to delete and can
+      be passed as a script parameter or set as a session variable. The script
+      authenticates to Microsoft Graph with the necessary permissions, retrieves
+      all blueprints from the Microsoft Graph beta endpoint, filters those
+      matching the specified display name, and issues DELETE requests to remove
+      each matching blueprint. It serves as a reference implementation for
+      deprovisioning agent blueprints, which can be further automated in the
+      future.

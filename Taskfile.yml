@@ -1,0 +1,29 @@
+version: "3"
+tasks:
+  create-paper:
+    desc: "Generates the LaTeX paper PDF"
+    cmds:
+      - uv run python -m docs.tex.generate
+
+  util-format-code:
+    desc: "Formats the code using ruff"
+    cmds:
+      - uv run ruff format .
+
+  util-lint:
+    desc: "Runs linting with Ruff"
+    cmds:
+      - uv run ruff check .
+      - uv run pyright .
+
+  util-gen-requirements-txt:
+    desc: "Generates requirements.txt from the current environment"
+    cmds:
+      - uv lock
+      - uv export --frozen --no-dev --output-file=requirements.txt
+      - uv export --frozen --all-groups --output-file=requirements.dev.txt
+
+  util-pip-audit:
+    desc: "Runs pip-audit to check for vulnerabilities"
+    cmds:
+      - uv run pip-audit --local

@@ -1,0 +1,318 @@
+\documentclass[9pt]{extarticle}%
+\usepackage[T1]{fontenc}%
+\usepackage[utf8]{inputenc}%
+\usepackage{lmodern}%
+\usepackage{textcomp}%
+\usepackage{lastpage}%
+\usepackage{geometry}%
+\geometry{top=1.2in,bottom=1.2in,left=1.2in,right=1.2in}%
+%
+\setlength{\parindent}{0pt}%
+\usepackage{titlesec}%
+\titleformat{\section}{\normalfont\Large}{\thesection}{1em}{}%
+\titleformat{\subsection}{\normalfont\large}{\thesubsection}{1em}{}%
+\titleformat{\subsubsection}{\normalfont\normalsize}{\thesubsubsection}{1em}{}%
+\usepackage{abstract}%
+\renewcommand{\abstractnamefont}{\normalfont\itshape}%
+\usepackage{enumitem}%
+\usepackage{graphicx}%
+\usepackage{float}%
+\usepackage{caption}%
+\captionsetup{font={it,small}}%
+\usepackage{fancyhdr}%
+\pagestyle{fancy}%
+\fancyhf{}%
+\fancyhead[R]{\textit{\thepage}}%
+\fancyfoot[C]{\small \textit{Internal Use Only}}%
+\renewcommand{\headrulewidth}{0.4pt}%
+\usepackage[htt]{hyphenat}%
+\usepackage{fancyvrb}%
+\usepackage{url}%
+\usepackage{hyperref}%
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue,citecolor=blue}%
+\usepackage{tocloft}%
+\renewcommand{\cftsecfont}{\normalfont}%
+\renewcommand{\cftsecpagefont}{\normalfont}%
+\renewcommand{\cfttoctitlefont}{\normalfont\Large}%
+\makeatletter%
+\renewcommand{\refname}{\raggedright\normalfont References}%
+\makeatother%
+\fancyhead[L]{\small \textit{Agent Identity and Blueprint}}%
+\makeatletter
+\renewcommand{\maketitle}{%
+  \bgroup\setlength{\parindent}{0pt}%
+  \noindent
+  \begin{minipage}[t]{0.7\textwidth}
+    \vspace{0pt}%
+    \raggedright
+    {\Large \@title}\\[1em]
+    \@author\\[1em]
+    \@date
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[t]{0.25\textwidth}
+    \vspace{0pt}%
+    \raggedleft
+    \includegraphics[width=0.75\textwidth]{docs/images/barcode.png}
+  \end{minipage}
+  \egroup
+  \vspace{2em}
+}
+\makeatother%
+\title{Agent Identity and Blueprint}%
+\author{\textit{Dennis Seah} (dennis.seah@microsoft.com)}%
+\date{{\large \textit{Microsoft Corporation}}\\[2em]\textit{February 26, 2026}\\[0.5em]\textit{Version 0.9.0}}%
+%
+\begin{document}%
+\normalsize%
+\maketitle%
+\thispagestyle{empty}%
+\begin{abstract}\itshape%
+This document presents an approach to provisioning and governing agent identities in \textit{Azure Entra ID}. It addresses the end-to-end workflow, beginning with the creation of agent blueprints that define metadata such as display names, descriptions, and tags, followed by the registration of corresponding application objects and service principals via the Microsoft Graph API. It then covers provisioning user-assigned managed identities in Azure and establishing federated identity credentials that enable passwordless authentication through OpenID Connect. Additional sections describe how to configure identifier URIs and expose custom OAuth2 permission scopes, as well as how to assign Azure RBAC roles—such as Storage Blob Data Reader—to grant agents least-privilege access to cloud resources. Reference PowerShell scripts accompany each topic, offering ready-to-use automation for every stage of the process.%
+\end{abstract}%
+\vspace{1em}%
+
+%
+\begin{center}\textit{Revision History}\end{center}%
+
+%
+\begin{center}%
+\small%
+\renewcommand{\arraystretch}{1.75}%
+\begin{tabular}{@{}rll@{}}%
+\textit{Version} & \textit{Date} & \textit{Description} \\%
+\hline%
+0.9.0 & 2026-02-26 & Initial draft \\%
+\end{tabular}%
+\end{center}%
+
+%
+\newpage%
+\newpage%
+\tableofcontents%
+\newpage%
+\section{Introduction}%
+This document provides guidance on agent identity and blueprints, including the motivation for agent identity, the concept of a blueprint, and how they relate to each other.
+%
+\par\vspace{\baselineskip}%
+To run the scripts provided in this document, you need the following prerequisites:
+%
+\par\vspace{\baselineskip}%
+\begin{itemize}[topsep=0pt]%
+\item PowerShell and the Microsoft Graph PowerShell SDK. Follow the \href{https://learn.microsoft.com/en-us/powershell/microsoftgraph/installation?view=graph-powershell-1.0}{instructions} in the official documentation to set up your environment.%
+\item An Azure tenant with the appropriate permissions to create and manage agent identities and blueprints.%
+\item The Microsoft Graph PowerShell SDK installed and configured on your local machine.%
+\item The necessary permissions to authenticate and interact with the Microsoft Graph API, such as \texttt{AgentIdentityBlueprintPrincipal.ReadWrite.All} and \texttt{AgentIdentityBlueprint.AddRemoveCreds.All}.%
+\end{itemize}%
+\vspace{\baselineskip}%
+The scripts provided in this document are intended for reference purposes. They can be adapted and integrated into your existing workflows and automation pipelines as needed. Always follow security best practices when managing identities and credentials in Azure Entra ID, including the principle of least privilege and secure storage of sensitive information.
+%
+\par\vspace{\baselineskip}%
+Run the scripts in this order (change directory to \texttt{scripts/} first):
+%
+\par\vspace{\baselineskip}%
+\begin{itemize}[topsep=0pt]%
+\item Create an agent blueprint using \texttt{CreateAgentBlueprint.ps1}. Set the \texttt{\$tenant\_id} and \texttt{\$blueprint\_name} parameters (e.g., \texttt{\$tenant\_id = "00000000-xxxx-0000-xxxx-000000000000"} and \texttt{\$blueprint\_name = "my-blueprint"}). Sample output:
+%
+\begin{Verbatim}[fontsize=\small]
+blueprint_name    : my-blueprint
+blueprint_app_id  : <redacted>
+blueprint_obj_id  : <redacted>
+principal_id      : <redacted>
+secret_value      : <redacted>
+secret_id         : <redacted>
+secret_expiry     : 2/26/2027 1:48:06 PM
+user_id           : <redacted>
+\end{Verbatim}
+%
+Use \texttt{DeleteAgentBlueprints.ps1} to delete the blueprint.
+%
+\item Create an agent identity using \texttt{CreateAgentIdentity.ps1}. Set \texttt{\$agent\_id\_name}, \texttt{\$blueprint\_app\_id}, \texttt{\$client\_secret}, and \texttt{\$sponsor\_user\_id} (e.g., \texttt{\$agent\_id\_name = "my-agent-identity"}). The remaining values can be obtained from the output of the previous script. Sample output:
+%
+\begin{Verbatim}[fontsize=\small]
+agent_id_name      : my-agent-identity
+agent_id_app_id    : <redacted>
+agent_id_id        : <redacted>
+blueprint_app_id   : <redacted>
+tenant_id          : <redacted>
+\end{Verbatim}
+%
+Use \texttt{DeleteAgentIdentities.ps1} to delete the agent identity.
+%
+\item Create a user-assigned managed identity using \texttt{CreateUserManagedIdentity.ps1}. Set \texttt{\$subscription\_id}, \texttt{\$mi\_name}, \texttt{\$rg\_name}, and \texttt{\$location} (e.g., \texttt{\$mi\_name = "my-managed-identity"}). The \texttt{\$location} parameter defaults to \texttt{eastus2}. Sample output:
+%
+\begin{Verbatim}[fontsize=\small]
+ManagedIdentityName : my-managed-identity
+principal_id        : <redacted>
+client_id           : <redacted>
+resource_id         : <redacted>
+rg_name             : <redacted>
+location            : eastus2
+\end{Verbatim}
+%
+Use \texttt{DeleteUserManagedIdentity.ps1} to delete the user-assigned managed identity.
+%
+\item Create a federated identity credential using \texttt{CreateFederatedIdentityCredential.ps1}. Set \texttt{\$subject} (the \texttt{PrincipalId} of the managed identity created in the previous step), \texttt{\$fed\_cred\_name} (a name of your choice for the federated identity credential), \texttt{\$issuer} (the Azure AD endpoint for your tenant, e.g., \texttt{https://login.microsoftonline.com/<tenant\_id>/v2.0}), and \texttt{\$blueprint\_app\_id} (from the first step). Sample output:
+%
+\begin{Verbatim}[fontsize=\small]
+fed_cred_id           : <redacted>
+fed_cred_name         : my_fed_cred
+blueprint_app_id      : <redacted>
+subject               : <principal_id of the managed identity>
+issuer                : https://login.microsoftonline.com/<tenant_id>/v2.0
+audiences             : {api://AzureADTokenExchange}
+\end{Verbatim}
+%
+Use \texttt{DeleteFederatedIdentityCredential.ps1} to delete the federated identity credential.
+%
+\item Add an identifier URI and scopes to the blueprint using \texttt{ConfigureIdentifierURIandScopes.ps1}. Set \texttt{\$identifier\_uri} (e.g., \texttt{api://my-blueprint}), \texttt{\$scope\_name} (e.g., \texttt{read.all}), \texttt{\$scope\_desc} (a description of the scope), \texttt{\$scope\_display\_name} (the display name), \texttt{\$scope\_type} (\texttt{User} or \texttt{Admin}, defaults to \texttt{User}), and \texttt{\$blueprint\_app\_id} (from the first step). Sample output:
+%
+\begin{Verbatim}[fontsize=\small]
+blueprint_app_id : <redacted>
+identifier_uri   : api://<blueprint_app_id>
+scope_name       : read.all
+scope_id         : <redacted>
+scope_type       : User
+tenant_id        : <redacted>
+\end{Verbatim}
+%
+Use \texttt{RemoveIdentifierURI.ps1} and \texttt{RemoveScope.ps1} to remove the identifier URI and scopes, respectively.
+%
+\item To verify the setup, assign a role to the agent identity and access an Azure resource using the federated identity credential. For example, grant the agent identity the \textit{Storage Blob Data Reader} role on a storage account using \texttt{SetupStoragePermissions.ps1}, then use the federated identity credential to obtain an access token and read blob data. Use \texttt{UnassignStoragePermission.ps1} to remove the role assignment.
+%
+\end{itemize}%
+\vspace{\baselineskip}%
+\section{Azure Agent Blueprint}%
+\label{sec:agent_blueprint}%
+In \textit{Azure Entra ID}, an \textit{agent blueprint} is a reusable template that defines the configuration, capabilities, and permissions for a specific type of autonomous agent. Every agent identity in \textit{Azure Entra ID} must originate from a blueprint, which acts as the parent management object. The blueprint specifies the App Roles and Microsoft Graph permissions (scopes) that all instances created from it are allowed to request, preventing individual agents from drifting into over-privileged states. Crucially, blueprints hold the credentials used for authentication. Individual agent instances do not carry their own secrets; they use the blueprint to request access tokens, which reduces \textit{service principal sprawl}. If an administrator disables a blueprint, it immediately prevents the creation of new agents and can be used to halt functionality for all associated child identities across the organization. Once a blueprint is deleted, all child identities are also deleted, and any tokens issued to those identities become invalid.
+%
+\par\vspace{\baselineskip}%
+Currently, creating and managing agent blueprints in \textit{Azure Entra ID} requires familiarity with \textit{PowerShell} and the \textit{Microsoft Graph PowerShell SDK}. However, we envision a future state where agent blueprints can be programmatically created, managed, and rotated at scale, with seamless integration into the agent development lifecycle and DevOps pipelines. This would empower organizations to rapidly onboard new agents, enforce security best practices automatically, and maintain robust governance as the number of agents grows.
+%
+\par\vspace{\baselineskip}%
+\subsection{Sample PowerShell Script for Creating an Agent Blueprint}%
+\href{https://github.com/dennisseah/agent-identity/blob/main/scripts/CreateAgentBlueprint.ps1}{\texttt{scripts/CreateAgentBlueprint.ps1}} is a sample script that demonstrates how to create an agent blueprint in \textit{Azure Entra ID} using PowerShell. The script requires the following parameters: \texttt{\$tenant\_id} (the Azure tenant ID where the blueprint will be created) and \texttt{\$blueprint\_name} (the display name for the new blueprint). These can be passed as script parameters or set as session variables. The script authenticates to Microsoft Graph with the necessary permissions, checks for existing blueprints with the same name, constructs the request body with the specified blueprint name and current user as sponsor and owner, and issues a POST request to the Microsoft Graph beta endpoint to create the blueprint. It serves as a reference implementation for provisioning agent blueprints, which can be further automated in the future.
+%
+\par\vspace{\baselineskip}%
+Upon successful creation, the script outputs the app ID and object ID of the new blueprint. A service principal is automatically provisioned for the blueprint, and its object ID is included in the console output. Note that blueprint credentials are not retrievable after creation; ensure that the app ID and object ID are securely stored for future reference.
+%
+\par\vspace{\baselineskip}%
+Each tenant supports a defined quota of blueprints, and each blueprint can have up to a defined number of child identities. If your use case requires additional blueprints or identities beyond the default limits, contact Microsoft support to request a quota increase. While duplicate display names are permitted, using unique names for each blueprint is recommended for improved manageability and traceability.
+%
+\par\vspace{\baselineskip}%
+\subsection{Sample PowerShell Script for Listing Agent Blueprints}%
+\href{https://github.com/dennisseah/agent-identity/blob/main/scripts/ListAgentBlueprints.ps1}{\texttt{scripts/ListAgentBlueprints.ps1}} is a sample script that demonstrates how to list all agent blueprints in \textit{Azure Entra ID} using PowerShell. It retrieves blueprints from the Microsoft Graph beta endpoint and displays them as formatted JSON output. It serves as a reference implementation for enumerating agent blueprints, which can be further automated in the future.
+%
+\par\vspace{\baselineskip}%
+\subsection{Sample PowerShell Script for Deleting Agent Blueprints}%
+\href{https://github.com/dennisseah/agent-identity/blob/main/scripts/DeleteAgentBlueprints.ps1}{\texttt{scripts/DeleteAgentBlueprints.ps1}} is a sample script that demonstrates how to delete agent blueprints by display name in \textit{Azure Entra ID} using PowerShell. The \texttt{\$blueprint\_name} parameter specifies the display name of the blueprints to delete and can be passed as a script parameter or set as a session variable. The script authenticates to Microsoft Graph with the necessary permissions, retrieves all blueprints from the Microsoft Graph beta endpoint, filters those matching the specified display name, and issues DELETE requests to remove each matching blueprint. It serves as a reference implementation for deprovisioning agent blueprints, which can be further automated in the future.
+%
+\par\vspace{\baselineskip}%
+\section{Azure Agent Identity}%
+In \textit{Azure Entra ID}, an \textit{agent identity} is a first-class security principal assigned to an autonomous agent---a software entity that performs tasks and makes decisions without human intervention. This identity enables the agent to authenticate, obtain authorization tokens, and interact with resources across the Azure ecosystem. Agent identities are foundational to ensuring that autonomous agents operate under well-defined permissions while adhering to organizational security and compliance policies.
+%
+\par\vspace{\baselineskip}%
+Each agent identity is derived from a parent \textit{agent blueprint} (see \S\ref{sec:agent_blueprint}) that defines the permissions, capabilities, and credential management strategy for all child identities. This hierarchical relationship enables centralized governance, allowing organizations to enforce consistent security policies across all agents derived from the same blueprint. By leveraging agent identities, organizations can implement the principle of least privilege, granting agents only the access necessary to perform their designated tasks and reducing the overall attack surface.
+%
+\par\vspace{\baselineskip}%
+Each agent identity is associated with a unique identifier that serves as the basis for permission management and access control. Organizations can leverage this identifier to enforce fine-grained authorization policies, restricting agents to the minimum set of resources required for their designated tasks. Additionally, agent identities provide a durable audit trail, enabling organizations to trace agent actions, analyze behavioral patterns, and maintain accountability throughout the system lifecycle.
+%
+\par\vspace{\baselineskip}%
+Currently, creating and managing agent identities in \textit{Azure Entra ID} requires familiarity with \textit{PowerShell} and the \textit{Microsoft Graph PowerShell SDK}. However, we envision a future state where agent identities can be programmatically created, managed, and rotated at scale, with seamless integration into the agent development lifecycle and DevOps pipelines. This would empower organizations to rapidly onboard new agents, enforce security best practices automatically, and maintain robust governance as the number of agents grows.
+%
+\par\vspace{\baselineskip}%
+\subsection{Sample PowerShell Script for Creating an Agent Identity}%
+\href{https://github.com/dennisseah/agent-identity/blob/main/scripts/CreateAgentIdentity.ps1}{\texttt{scripts/CreateAgentIdentity.ps1}} is a sample script that demonstrates how to create an agent identity in \textit{Azure Entra ID} using PowerShell. The script requires the following parameters: \texttt{\$tenant\_id} (the Azure tenant ID), \texttt{\$agent\_id\_name} (the display name for the new identity), \texttt{\$blueprint\_app\_id} (the app ID of the parent blueprint), \texttt{\$client\_secret} (the blueprint's client secret for token acquisition), and \texttt{\$sponsor\_user\_id} (the object ID of the sponsoring user). These can be passed as script parameters or set as session variables. The script authenticates to Microsoft Graph with the necessary permissions, acquires a blueprint token via client credentials, checks for existing identities with the same name, and issues a POST request to the Microsoft Graph beta endpoint to create the agent identity. It serves as a reference implementation for provisioning agent identities, which can be further automated in the future.
+%
+\par\vspace{\baselineskip}%
+Each blueprint supports a defined quota of child agent identities. If your use case requires additional identities beyond the default limit, contact Microsoft support to request a quota increase. While duplicate display names are permitted, using unique names for each agent identity is recommended for improved manageability and traceability.
+%
+\par\vspace{\baselineskip}%
+After the script creates the agent identity, the entry may not appear immediately in the list of identities due to eventual consistency in the system. However, the identity is functional and can be used for authentication and authorization as soon as the creation API call returns successfully. The app ID and object ID displayed in the console output can be used immediately, and the identity will become visible in subsequent list queries after a brief propagation delay.
+%
+\par\vspace{\baselineskip}%
+\subsection{Sample PowerShell Script for Listing Agent Identities}%
+\href{https://github.com/dennisseah/agent-identity/blob/main/scripts/ListAgentIdentities.ps1}{\texttt{scripts/ListAgentIdentities.ps1}} is a sample script that demonstrates how to list all agent identities in \textit{Azure Entra ID} using PowerShell. It retrieves agent identities from the Microsoft Graph beta endpoint and displays them as formatted JSON output. It serves as a reference implementation for enumerating agent identities, which can be further automated in the future.
+%
+\par\vspace{\baselineskip}%
+\subsection{Sample PowerShell Script for Deleting Agent Identities}%
+\href{https://github.com/dennisseah/agent-identity/blob/main/scripts/DeleteAgentIdentities.ps1}{\texttt{scripts/DeleteAgentIdentities.ps1}} is a sample script that demonstrates how to delete agent identities by display name in \textit{Azure Entra ID} using PowerShell. The \texttt{\$agent\_id\_name} parameter specifies the display name of the identities to delete and can be passed as a script parameter or set as a session variable. The script retrieves all agent identities from the Microsoft Graph beta endpoint, filters those matching the specified display name, and issues DELETE requests to remove each matching identity. It serves as a reference implementation for deprovisioning agent identities, which can be further automated in the future.
+%
+\par\vspace{\baselineskip}%
+\section{Managed Identity}%
+In \textit{Azure Entra ID}, a \textit{managed identity} is a type of service principal that provides an automatically managed identity for applications to use when connecting to resources that support Microsoft Entra authentication. Managed identities eliminate the need for developers to manage credentials, as Azure automatically handles the creation, rotation, and security of the identity. There are two types of managed identities:
+%
+\par\vspace{\baselineskip}%
+\begin{itemize}[topsep=0pt]%
+\item \textit{System-assigned managed identity}: This identity is enabled directly on an Azure resource, such as a virtual machine or an Azure Function. It is tied to the lifecycle of that resource, meaning it is created when the resource is created and deleted when the resource is deleted.%
+\item \textit{User-assigned managed identity}: This identity is created as a standalone Azure resource and can be assigned to one or more Azure resources. It has its own lifecycle, independent of the resources it is assigned to, allowing for greater flexibility and reuse across multiple resources.%
+\end{itemize}%
+\vspace{\baselineskip}%
+In this context, we create \textit{user-assigned managed identities} that are associated with an agent blueprint (see \S\ref{sec:agent_blueprint}) and serve as the underlying identity for agent instances. By leveraging managed identities, organizations can ensure that agent identities are securely managed by Azure, with automatic credential rotation and reduced risk of credential leakage. This approach also simplifies the authentication process for agents, enabling them to seamlessly obtain access tokens for Azure resources without handling secrets directly.
+%
+\par\vspace{\baselineskip}%
+\subsection{Sample PowerShell Script for Creating a User-Assigned Managed Identity}%
+\href{https://github.com/dennisseah/agent-identity/blob/main/scripts/CreateUserManagedIdentity.ps1}{\texttt{scripts/CreateUserManagedIdentity.ps1}} is a sample script that demonstrates how to create a user-assigned managed identity in \textit{Azure Entra ID} using PowerShell. The script requires the following parameters: \texttt{\$subscription\_id} (the Azure subscription ID), \texttt{\$mi\_name} (the name for the new managed identity), \texttt{\$rg\_name} (the resource group in which the managed identity will be created), and \texttt{\$location} (the Azure region, defaulting to \texttt{eastus2}). These can be passed as script parameters or set as session variables. The script verifies that the current user has the required role assignment on the resource group, checks for an existing managed identity with the same name, and creates a new user-assigned managed identity using the \texttt{New-AzUserAssignedIdentity} cmdlet if one does not already exist. The script outputs the details of the created managed identity for future reference and association with agent blueprints. This step can also be performed in the Azure portal.
+%
+\par\vspace{\baselineskip}%
+\subsection{Sample PowerShell Script for Deleting a User-Assigned Managed Identity}%
+\href{https://github.com/dennisseah/agent-identity/blob/main/scripts/DeleteUserManagedIdentity.ps1}{\texttt{scripts/DeleteUserManagedIdentity.ps1}} is a sample script that demonstrates how to delete a user-assigned managed identity in \textit{Azure Entra ID} using PowerShell. The script requires the following parameters: \texttt{\$rg\_name} (the resource group containing the managed identity) and \texttt{\$mi\_name} (the name of the managed identity to delete). These can be passed as script parameters or set as session variables. The script checks for the existence of the specified managed identity, and if it exists, deletes it using the \texttt{Remove-AzUserAssignedIdentity} cmdlet. Upon successful deletion, the script outputs a confirmation message. This step can also be performed in the Azure portal.
+%
+\par\vspace{\baselineskip}%
+\section{Federated Identity Credential}%
+A \textit{federated identity credential} in \textit{Azure Entra ID} enables an application or service to authenticate using external identities---such as those issued by GitHub Actions or Azure Managed Identities---without traditional secrets or certificates. This credential type leverages the OpenID Connect (OIDC) protocol to establish a trust relationship between \textit{Azure Entra ID} and the external identity provider, enabling secure, passwordless authentication. Adopting federated identity credentials reduces the attack surface associated with credential management, strengthens overall security posture, and streamlines integration with modern development and deployment workflows.
+%
+\par\vspace{\baselineskip}%
+Each federated identity credential is associated with an \textit{agent blueprint} (\S\ref{sec:agent_blueprint}) and serves as the authentication mechanism for agent instances that access resources across the Azure ecosystem. Because Azure manages the credential lifecycle---including automatic rotation---the risk of credential leakage is significantly reduced. This approach simplifies the authentication process for agents, enabling them to obtain access tokens for Azure resources without handling secrets directly.
+%
+\par\vspace{\baselineskip}%
+\subsection{Sample PowerShell Script for Creating a Federated Identity Credential}%
+\href{https://github.com/dennisseah/agent-identity/blob/main/scripts/CreateFederatedIdentityCredential.ps1}{\texttt{scripts/CreateFederatedIdentityCredential.ps1}} is a reference script that creates or updates a federated identity credential on an \textit{agent blueprint} in \textit{Azure Entra ID}. The script accepts the following parameters: \texttt{\$blueprint\_app\_id} (the app ID of the parent blueprint), \texttt{\$subject} (the subject claim, such as a managed identity principal ID or a GitHub Actions reference), \texttt{\$issuer} (the issuer URL of the external identity provider), \texttt{\$audiences} (the token audience; defaults to \texttt{api://AzureADTokenExchange}), \texttt{\$description} (an optional description), and \texttt{\$fed\_cred\_name} (the credential name). The script authenticates to Microsoft Graph with the required permissions, verifies that the specified blueprint exists, checks for an existing credential with the same name, prompts for confirmation if the subject differs, and issues a POST or PATCH request to the Microsoft Graph beta endpoint accordingly. This implementation can be adapted or automated to suit organizational provisioning workflows.
+%
+\par\vspace{\baselineskip}%
+\subsection{Sample PowerShell Script for Listing Federated Identity Credentials}%
+\href{https://github.com/dennisseah/agent-identity/blob/main/scripts/ListFederatedIdentityCredentials.ps1}{\texttt{scripts/ListFederatedIdentityCredentials.ps1}} is a reference script that lists the federated identity credentials associated with a specific \textit{agent blueprint} in \textit{Azure Entra ID}. The script accepts the parameter \texttt{\$blueprint\_app\_id} (the app ID of the parent blueprint). It authenticates to Microsoft Graph with the required permissions, retrieves all federated identity credentials for the specified blueprint, and outputs each credential's name, subject claim, issuer, audiences, and description. This capability supports auditing and governance by providing visibility into the credentials used for agent authentication.
+%
+\par\vspace{\baselineskip}%
+\subsection{Sample PowerShell Script for Deleting a Federated Identity Credential}%
+\href{https://github.com/dennisseah/agent-identity/blob/main/scripts/DeleteFederatedIdentityCredential.ps1}{\texttt{scripts/DeleteFederatedIdentityCredential.ps1}} is a reference script that deletes a federated identity credential from an \textit{agent blueprint} in \textit{Azure Entra ID}. The script accepts the parameters \texttt{\$blueprint\_app\_id} (the app ID of the parent blueprint) and \texttt{\$subject} (the subject claim of the credential to remove). It authenticates to Microsoft Graph with the required permissions, retrieves the federated identity credentials for the specified blueprint, identifies the credential matching the provided subject claim, and issues a DELETE request to the Microsoft Graph beta endpoint. Timely removal of unused or compromised credentials is essential for maintaining a sound security posture. This implementation can be adapted or automated to suit organizational deprovisioning workflows.
+%
+\par\vspace{\baselineskip}%
+\section{Configure Identifier URI and Scopes for an Agent Blueprint}%
+Configuring the identifier URI and scopes is essential for securing agent identity. The identifier URI establishes a unique endpoint that enables the agent to receive authorized, token-based requests on behalf of users. Scopes define granular permissions for API operations, which the backend validates from incoming access tokens.
+%
+\par\vspace{\baselineskip}%
+\begin{itemize}[topsep=0pt]%
+\item \textit{Secure Authentication and Authorization}: The identifier URI creates a unique identifier for the agent, enabling it to act on behalf of users in interactive scenarios.%
+\item \textit{Defining Access Permissions (Scopes)}: Scopes specify what an agent is permitted to do, serving as granular permissions validated by the backend from incoming access tokens.%
+\end{itemize}%
+\vspace{\baselineskip}%
+\subsection{Reference Script for Configuring Identifier URI and Scopes}%
+\href{https://github.com/dennisseah/agent-identity/blob/main/scripts/ConfigureIdentifierURIandScopes.ps1}{\texttt{scripts/ConfigureIdentifierURIandScopes.ps1}} is a reference script for configuring the identifier URI and API scopes on an agent blueprint in \textit{Azure Entra ID}. The script accepts the following parameters: \texttt{\$tenant\_id} (the Azure tenant ID), \texttt{\$blueprint\_app\_id} (the app ID of the agent blueprint), \texttt{\$identifier\_uri} (the unique identifier URI; defaults to \texttt{api://\$blueprint\_app\_id} when omitted), \texttt{\$scope\_name} (the scope name, e.g., \texttt{read.all}), \texttt{\$scope\_desc} (a description for the scope), \texttt{\$scope\_display\_name} (the display name for the scope), and \texttt{\$scope\_type} (either \texttt{User} or \texttt{Admin}; defaults to \texttt{User}). Each parameter can be passed directly or set as a session variable. The script authenticates to Microsoft Graph, constructs the request body with the specified identifier URI and scopes, and issues a PATCH request to the beta endpoint to update the blueprint's application registration.
+%
+\par\vspace{\baselineskip}%
+\subsection{Reference Script for Listing Identifier URI and Scopes}%
+\href{https://github.com/dennisseah/agent-identity/blob/main/scripts/ListIdentifierURIandScopes.ps1}{\texttt{scripts/ListIdentifierURIandScopes.ps1}} is a reference script for listing the identifier URI and API scopes configured on an agent blueprint in \textit{Azure Entra ID}. The script accepts the \texttt{\$tenant\_id} and \texttt{\$blueprint\_app\_id} parameters, authenticates to Microsoft Graph, retrieves the application registration for the specified blueprint, and outputs the identifier URIs and OAuth2 permission scopes.
+%
+\par\vspace{\baselineskip}%
+\subsection{Reference Script for Removing an Identifier URI}%
+\href{https://github.com/dennisseah/agent-identity/blob/main/scripts/RemoveIdentifierURI.ps1}{\texttt{scripts/RemoveIdentifierURI.ps1}} is a reference script for removing an identifier URI from an agent blueprint in \textit{Azure Entra ID}. The script accepts the following parameters: \texttt{\$tenant\_id} (the Azure tenant ID), \texttt{\$blueprint\_app\_id} (the app ID of the agent blueprint), and \texttt{\$identifier\_uri} (the identifier URI to remove). Each parameter can be passed directly or set as a session variable. The script authenticates to Microsoft Graph, retrieves the current identifier URIs, filters out the specified URI, and issues a PATCH request to the beta endpoint to update the blueprint.
+%
+\par\vspace{\baselineskip}%
+\subsection{Reference Script for Removing a Scope}%
+\href{https://github.com/dennisseah/agent-identity/blob/main/scripts/RemoveScope.ps1}{\texttt{scripts/RemoveScope.ps1}} is a reference script for removing an API scope from an agent blueprint in \textit{Azure Entra ID}. The script accepts the following parameters: \texttt{\$tenant\_id} (the Azure tenant ID), \texttt{\$blueprint\_app\_id} (the app ID of the agent blueprint), and \texttt{\$scope\_id} (the ID of the scope to remove). Each parameter can be passed directly or set as a session variable. The script authenticates to Microsoft Graph, disables the target scope, then removes it from the blueprint via two sequential PATCH requests to the beta endpoint, as required by the Graph API.
+%
+\par\vspace{\baselineskip}%
+\section{Grant Storage Blob Data Reader Role to an Agent Identity}%
+To enable an agent identity to read blob data in Azure Storage, it must be granted the \textit{Storage Blob Data Reader} role. This role provides read access to blob containers and their contents. It can be assigned at the resource group or individual storage account scope, depending on the level of access required.
+%
+\par\vspace{\baselineskip}%
+\subsection{Reference Script for Assigning the Storage Blob Data Reader Role}%
+\href{https://github.com/dennisseah/agent-identity/blob/main/scripts/SetupStoragePermissions.ps1}{\texttt{scripts/SetupStoragePermissions.ps1}} is a reference script for assigning the \textit{Storage Blob Data Reader} role to an agent identity on a specific Azure Storage account. The script accepts three parameters: \texttt{\$storage\_acc\_name} (the storage account name), \texttt{\$rg\_name} (the resource group containing the storage account), and \texttt{\$agent\_id\_id} (the application ID of the agent identity). Each parameter can be passed directly or set as a session variable. The script validates the storage account, checks for an existing role assignment, and uses the Azure CLI (\texttt{az role assignment create}) to grant the role at the storage account scope. Alternatively, this can be performed in the Azure portal by navigating to the storage account, selecting "Access Control (IAM)", and adding a role assignment for the agent identity. The user performing this action must have sufficient permissions, such as \textit{Owner}, \textit{User Access Administrator}, or \textit{Role Based Access Control Administrator} on the resource group or storage account.
+%
+\par\vspace{\baselineskip}%
+\subsection{Reference Script for Removing the Storage Blob Data Reader Role}%
+\href{https://github.com/dennisseah/agent-identity/blob/main/scripts/RemoveStoragePermission.ps1}{\texttt{scripts/RemoveStoragePermission.ps1}} is a reference script for removing the \textit{Storage Blob Data Reader} role assignment from an agent identity on a specific Azure Storage account. The script accepts the same three parameters: \texttt{\$storage\_acc\_name}, \texttt{\$rg\_name}, and \texttt{\$agent\_id\_id}. It validates the storage account, confirms the role assignment exists, and uses the Azure CLI (\texttt{az role assignment delete}) to remove it. Alternatively, this can be performed in the Azure portal by navigating to the storage account, selecting "Access Control (IAM)", and removing the role assignment for the agent identity. The user performing this action must have sufficient permissions, such as \textit{Owner}, \textit{User Access Administrator}, or \textit{Role Based Access Control Administrator} on the resource group or storage account.
+%
+\par\vspace{\baselineskip}%
+\end{document}

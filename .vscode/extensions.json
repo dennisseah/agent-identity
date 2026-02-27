@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "ms-python.python",
+    "charliermarsh.ruff",
+    "editorconfig.editorconfig",
+    "esbenp.prettier-vscode",
+    "hediet.vscode-drawio",
+    "ms-vscode.powershell"
+  ]
+}

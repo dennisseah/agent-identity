@@ -1,0 +1,67 @@
+---
+title: Configure Identifier URI and Scopes for an Agent Blueprint
+content:
+  - type: paragraph
+    text: >
+      Configuring the identifier URI and scopes is essential for securing agent
+      identity. The identifier URI establishes a unique endpoint that enables
+      the agent to receive authorized, token-based requests on behalf of users.
+      Scopes define granular permissions for API operations, which the backend
+      validates from incoming access tokens.
+  - type: itemize
+    items:
+      - "*Secure Authentication and Authorization*: The identifier URI creates a
+        unique identifier for the agent, enabling it to act on behalf of users
+        in interactive scenarios."
+      - "*Defining Access Permissions (Scopes)*: Scopes specify what an agent is
+        permitted to do, serving as granular permissions validated by the
+        backend from incoming access tokens."
+  - type: paragraph
+    subsection: "Reference Script for Configuring Identifier URI and Scopes"
+    text: >
+      [`scripts/ConfigureIdentifierURIandScopes.ps1`](https://github.com/dennisseah/agent-identity/blob/main/scripts/ConfigureIdentifierURIandScopes.ps1)
+      is a reference script for configuring the identifier URI and API scopes on
+      an agent blueprint in *Azure Entra ID*. The script accepts the following
+      parameters: `$tenant_id` (the Azure tenant ID), `$blueprint_app_id` (the
+      app ID of the agent blueprint), `$identifier_uri` (the unique identifier
+      URI; defaults to `api://$blueprint_app_id` when omitted), `$scope_name`
+      (the scope name, e.g., `read.all`), `$scope_desc` (a description for the
+      scope), `$scope_display_name` (the display name for the scope), and
+      `$scope_type` (either `User` or `Admin`; defaults to `User`). Each
+      parameter can be passed directly or set as a session variable. The script
+      authenticates to Microsoft Graph, constructs the request body with the
+      specified identifier URI and scopes, and issues a PATCH request to the
+      beta endpoint to update the blueprint's application registration.
+  - type: paragraph
+    subsection: "Reference Script for Listing Identifier URI and Scopes"
+    text: >
+      [`scripts/ListIdentifierURIandScopes.ps1`](https://github.com/dennisseah/agent-identity/blob/main/scripts/ListIdentifierURIandScopes.ps1)
+      is a reference script for listing the identifier URI and API scopes
+      configured on an agent blueprint in *Azure Entra ID*. The script accepts
+      the `$tenant_id` and `$blueprint_app_id` parameters, authenticates to
+      Microsoft Graph, retrieves the application registration for the specified
+      blueprint, and outputs the identifier URIs and OAuth2 permission scopes.
+  - type: paragraph
+    subsection: "Reference Script for Removing an Identifier URI"
+    text: >
+      [`scripts/RemoveIdentifierURI.ps1`](https://github.com/dennisseah/agent-identity/blob/main/scripts/RemoveIdentifierURI.ps1)
+      is a reference script for removing an identifier URI from an agent
+      blueprint in *Azure Entra ID*. The script accepts the following
+      parameters: `$tenant_id` (the Azure tenant ID), `$blueprint_app_id` (the
+      app ID of the agent blueprint), and `$identifier_uri` (the identifier URI
+      to remove). Each parameter can be passed directly or set as a session
+      variable. The script authenticates to Microsoft Graph, retrieves the
+      current identifier URIs, filters out the specified URI, and issues a PATCH
+      request to the beta endpoint to update the blueprint.
+  - type: paragraph
+    subsection: "Reference Script for Removing a Scope"
+    text: >
+      [`scripts/RemoveScope.ps1`](https://github.com/dennisseah/agent-identity/blob/main/scripts/RemoveScope.ps1)
+      is a reference script for removing an API scope from an agent blueprint in
+      *Azure Entra ID*. The script accepts the following parameters:
+      `$tenant_id` (the Azure tenant ID), `$blueprint_app_id` (the app ID of the
+      agent blueprint), and `$scope_id` (the ID of the scope to remove). Each
+      parameter can be passed directly or set as a session variable. The script
+      authenticates to Microsoft Graph, disables the target scope, then removes
+      it from the blueprint via two sequential PATCH requests to the beta
+      endpoint, as required by the Graph API.

@@ -1,0 +1,66 @@
+---
+title: Managed Identity
+content:
+  - type: paragraph
+    text: >
+      In *Azure Entra ID*, a *managed identity* is a type of service principal
+      that provides an automatically managed identity for applications to use
+      when connecting to resources that support Microsoft Entra authentication.
+      Managed identities eliminate the need for developers to manage
+      credentials, as Azure automatically handles the creation, rotation, and
+      security of the identity. There are two types of managed identities:
+  - type: itemize
+    items:
+      - "*System-assigned managed identity*: This identity is enabled directly
+        on an Azure resource, such as a virtual machine or an Azure Function. It
+        is tied to the lifecycle of that resource, meaning it is created when
+        the resource is created and deleted when the resource is deleted."
+      - "*User-assigned managed identity*: This identity is created as a
+        standalone Azure resource and can be assigned to one or more Azure
+        resources. It has its own lifecycle, independent of the resources it is
+        assigned to, allowing for greater flexibility and reuse across multiple
+        resources."
+  - type: paragraph
+    text: >
+      In this context, we create *user-assigned managed identities* that are
+      associated with an agent blueprint (see \S\ref{sec:agent_blueprint}) and
+      serve as the underlying identity for agent instances. By leveraging
+      managed identities, organizations can ensure that agent identities are
+      securely managed by Azure, with automatic credential rotation and reduced
+      risk of credential leakage. This approach also simplifies the
+      authentication process for agents, enabling them to seamlessly obtain
+      access tokens for Azure resources without handling secrets directly.
+  - type: paragraph
+    subsection:
+      "Sample PowerShell Script for Creating a User-Assigned Managed Identity"
+    text: >
+      [`scripts/CreateUserManagedIdentity.ps1`](https://github.com/dennisseah/agent-identity/blob/main/scripts/CreateUserManagedIdentity.ps1)
+      is a sample script that demonstrates how to create a user-assigned managed
+      identity in *Azure Entra ID* using PowerShell. The script requires the
+      following parameters: `$subscription_id` (the Azure subscription ID),
+      `$mi_name` (the name for the new managed identity), `$rg_name` (the
+      resource group in which the managed identity will be created), and
+      `$location` (the Azure region, defaulting to `eastus2`). These can be
+      passed as script parameters or set as session variables. The script
+      verifies that the current user has the required role assignment on the
+      resource group, checks for an existing managed identity with the same
+      name, and creates a new user-assigned managed identity using the
+      `New-AzUserAssignedIdentity` cmdlet if one does not already exist. The
+      script outputs the details of the created managed identity for future
+      reference and association with agent blueprints. This step can also be
+      performed in the Azure portal.
+  - type: paragraph
+    subsection:
+      "Sample PowerShell Script for Deleting a User-Assigned Managed Identity"
+    text: >
+      [`scripts/DeleteUserManagedIdentity.ps1`](https://github.com/dennisseah/agent-identity/blob/main/scripts/DeleteUserManagedIdentity.ps1)
+      is a sample script that demonstrates how to delete a user-assigned managed
+      identity in *Azure Entra ID* using PowerShell. The script requires the
+      following parameters: `$rg_name` (the resource group containing the
+      managed identity) and `$mi_name` (the name of the managed identity to
+      delete). These can be passed as script parameters or set as session
+      variables. The script checks for the existence of the specified managed
+      identity, and if it exists, deletes it using the
+      `Remove-AzUserAssignedIdentity` cmdlet. Upon successful deletion, the
+      script outputs a confirmation message. This step can also be performed in
+      the Azure portal.

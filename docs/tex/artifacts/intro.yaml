@@ -1,0 +1,134 @@
+---
+title: Introduction
+content:
+  - type: paragraph
+    text: >
+      This document provides guidance on agent identity and blueprints,
+      including the motivation for agent identity, the concept of a blueprint,
+      and how they relate to each other.
+  - type: paragraph
+    text: >
+      To run the scripts provided in this document, you need the following
+      prerequisites:
+  - type: itemize
+    items:
+      - "PowerShell and the Microsoft Graph PowerShell SDK. Follow the
+        [instructions](https://learn.microsoft.com/en-us/powershell/microsoftgraph/installation?view=graph-powershell-1.0)
+        in the official documentation to set up your environment."
+      - An Azure tenant with the appropriate permissions to create and manage
+        agent identities and blueprints.
+      - The Microsoft Graph PowerShell SDK installed and configured on your
+        local machine.
+      - The necessary permissions to authenticate and interact with the
+        Microsoft Graph API, such as
+        `AgentIdentityBlueprintPrincipal.ReadWrite.All` and
+        `AgentIdentityBlueprint.AddRemoveCreds.All`.
+  - type: paragraph
+    text: >
+      The scripts provided in this document are intended for reference purposes.
+      They can be adapted and integrated into your existing workflows and
+      automation pipelines as needed. Always follow security best practices when
+      managing identities and credentials in Azure Entra ID, including the
+      principle of least privilege and secure storage of sensitive information.
+  - type: paragraph
+    text: >
+      Run the scripts in this order (change directory to `scripts/` first):
+  - type: itemize
+    items:
+      - parts:
+          - text: >
+              Create an agent blueprint using `CreateAgentBlueprint.ps1`. Set
+              the `$tenant_id` and `$blueprint_name` parameters (e.g.,
+              `$tenant_id = "00000000-xxxx-0000-xxxx-000000000000"` and
+              `$blueprint_name = "my-blueprint"`). Sample output:
+          - code: |
+              blueprint_name    : my-blueprint
+              blueprint_app_id  : <redacted>
+              blueprint_obj_id  : <redacted>
+              principal_id      : <redacted>
+              secret_value      : <redacted>
+              secret_id         : <redacted>
+              secret_expiry     : 2/26/2027 1:48:06 PM
+              user_id           : <redacted>
+          - text: >
+              Use `DeleteAgentBlueprints.ps1` to delete the blueprint.
+      - parts:
+          - text: >
+              Create an agent identity using `CreateAgentIdentity.ps1`. Set
+              `$agent_id_name`, `$blueprint_app_id`, `$client_secret`, and
+              `$sponsor_user_id` (e.g., `$agent_id_name = "my-agent-identity"`).
+              The remaining values can be obtained from the output of the
+              previous script. Sample output:
+          - code: |
+              agent_id_name      : my-agent-identity
+              agent_id_app_id    : <redacted>
+              agent_id_id        : <redacted>
+              blueprint_app_id   : <redacted>
+              tenant_id          : <redacted>
+          - text: >
+              Use `DeleteAgentIdentities.ps1` to delete the agent identity.
+      - parts:
+          - text: >
+              Create a user-assigned managed identity using
+              `CreateUserManagedIdentity.ps1`. Set `$subscription_id`,
+              `$mi_name`, `$rg_name`, and `$location` (e.g., `$mi_name =
+              "my-managed-identity"`). The `$location` parameter defaults to
+              `eastus2`. Sample output:
+          - code: |
+              ManagedIdentityName : my-managed-identity
+              principal_id        : <redacted>
+              client_id           : <redacted>
+              resource_id         : <redacted>
+              rg_name             : <redacted>
+              location            : eastus2
+          - text: >
+              Use `DeleteUserManagedIdentity.ps1` to delete the user-assigned
+              managed identity.
+      - parts:
+          - text: >
+              Create a federated identity credential using
+              `CreateFederatedIdentityCredential.ps1`. Set `$subject` (the
+              `PrincipalId` of the managed identity created in the previous
+              step), `$fed_cred_name` (a name of your choice for the federated
+              identity credential), `$issuer` (the Azure AD endpoint for your
+              tenant, e.g.,
+              `https://login.microsoftonline.com/<tenant_id>/v2.0`), and
+              `$blueprint_app_id` (from the first step). Sample output:
+          - code: |
+              fed_cred_id           : <redacted>
+              fed_cred_name         : my_fed_cred
+              blueprint_app_id      : <redacted>
+              subject               : <principal_id of the managed identity>
+              issuer                : https://login.microsoftonline.com/<tenant_id>/v2.0
+              audiences             : {api://AzureADTokenExchange}
+          - text: >
+              Use `DeleteFederatedIdentityCredential.ps1` to delete the
+              federated identity credential.
+      - parts:
+          - text: >
+              Add an identifier URI and scopes to the blueprint using
+              `ConfigureIdentifierURIandScopes.ps1`. Set `$identifier_uri`
+              (e.g., `api://my-blueprint`), `$scope_name` (e.g., `read.all`),
+              `$scope_desc` (a description of the scope), `$scope_display_name`
+              (the display name), `$scope_type` (`User` or `Admin`, defaults to
+              `User`), and `$blueprint_app_id` (from the first step). Sample
+              output:
+          - code: |
+              blueprint_app_id : <redacted>
+              identifier_uri   : api://<blueprint_app_id>
+              scope_name       : read.all
+              scope_id         : <redacted>
+              scope_type       : User
+              tenant_id        : <redacted>
+          - text: >
+              Use `RemoveIdentifierURI.ps1` and `RemoveScope.ps1` to remove the
+              identifier URI and scopes, respectively.
+      - parts:
+          - text: >
+              To verify the setup, assign a role to the agent identity and
+              access an Azure resource using the federated identity credential.
+              For example, grant the agent identity the *Storage Blob Data
+              Reader* role on a storage account using
+              `SetupStoragePermissions.ps1`, then use the federated identity
+              credential to obtain an access token and read blob data. Use
+              `UnassignStoragePermission.ps1` to remove the role assignment.

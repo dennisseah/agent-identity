@@ -1,0 +1,45 @@
+---
+title: Grant Storage Blob Data Reader Role to an Agent Identity
+content:
+  - type: paragraph
+    text: >
+      To enable an agent identity to read blob data in Azure Storage, it must be
+      granted the *Storage Blob Data Reader* role. This role provides read
+      access to blob containers and their contents. It can be assigned at the
+      resource group or individual storage account scope, depending on the level
+      of access required.
+  - type: paragraph
+    subsection:
+      "Reference Script for Assigning the Storage Blob Data Reader Role"
+    text: >
+      [`scripts/SetupStoragePermissions.ps1`](https://github.com/dennisseah/agent-identity/blob/main/scripts/SetupStoragePermissions.ps1)
+      is a reference script for assigning the *Storage Blob Data Reader* role to
+      an agent identity on a specific Azure Storage account. The script accepts
+      three parameters: `$storage_acc_name` (the storage account name),
+      `$rg_name` (the resource group containing the storage account), and
+      `$agent_id_id` (the application ID of the agent identity). Each parameter
+      can be passed directly or set as a session variable. The script validates
+      the storage account, checks for an existing role assignment, and uses the
+      Azure CLI (`az role assignment create`) to grant the role at the storage
+      account scope. Alternatively, this can be performed in the Azure portal by
+      navigating to the storage account, selecting "Access Control (IAM)", and
+      adding a role assignment for the agent identity. The user performing this
+      action must have sufficient permissions, such as *Owner*, *User Access
+      Administrator*, or *Role Based Access Control Administrator* on the
+      resource group or storage account.
+  - type: paragraph
+    subsection:
+      "Reference Script for Removing the Storage Blob Data Reader Role"
+    text: >
+      [`scripts/RemoveStoragePermission.ps1`](https://github.com/dennisseah/agent-identity/blob/main/scripts/RemoveStoragePermission.ps1)
+      is a reference script for removing the *Storage Blob Data Reader* role
+      assignment from an agent identity on a specific Azure Storage account. The
+      script accepts the same three parameters: `$storage_acc_name`, `$rg_name`,
+      and `$agent_id_id`. It validates the storage account, confirms the role
+      assignment exists, and uses the Azure CLI (`az role assignment delete`) to
+      remove it. Alternatively, this can be performed in the Azure portal by
+      navigating to the storage account, selecting "Access Control (IAM)", and
+      removing the role assignment for the agent identity. The user performing
+      this action must have sufficient permissions, such as *Owner*, *User
+      Access Administrator*, or *Role Based Access Control Administrator* on the
+      resource group or storage account.
