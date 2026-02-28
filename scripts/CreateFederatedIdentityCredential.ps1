@@ -71,13 +71,9 @@ if (-not $issuer) {
     return
 }
 
-$requiredScopes = @(
-    "AgentIdentityBlueprint.AddRemoveCreds.All",
-    "Application.ReadWrite.All"
-)
+. ./ConnectMgGraph.ps1
 
-# Authenticate to Microsoft Graph with the required scopes for managing
-Connect-MgGraph -Scopes $requiredScopes -TenantId $tenant_id -ErrorAction Stop -NoWelcome
+ConnectMgGraphCredScopes -TenantId $tenant_id
 
 # Step 2: Verify Blueprint exists
 try {

@@ -44,17 +44,10 @@ if (-not $blueprint_name) {
     return
 }
 
-$requiredScopes = @(
-    "AgentIdentityBlueprint.AddRemoveCreds.All",
-    "AgentIdentityBlueprint.Create",
-    "DelegatedPermissionGrant.ReadWrite.All",
-    "Application.Read.All",
-    "AgentIdentityBlueprintPrincipal.Create",
-    "User.Read"
-)
 
-# Authenticate to Microsoft Graph with the required scopes for managing
-Connect-MgGraph -Scopes $requiredScopes -TenantId $tenant_id -ErrorAction Stop
+. ./ConnectMgGraph.ps1
+
+ConnectMgGraphBlueprintScopes -TenantId $tenant_id
 
 
 $blueprints = Invoke-MgGraphRequest -Method GET `

@@ -75,7 +75,7 @@ content:
               "my-managed-identity"`). The `$location` parameter defaults to
               `eastus2`. Sample output:
           - code: |
-              ManagedIdentityName : my-managed-identity
+              mi_name : my-managed-identity
               principal_id        : <redacted>
               client_id           : <redacted>
               resource_id         : <redacted>

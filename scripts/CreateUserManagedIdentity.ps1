@@ -95,12 +95,12 @@ $msiPrincipalId = $managedIdentity.PrincipalId
 $msiClientId = $managedIdentity.ClientId
 
 $result = [PSCustomObject]@{
-    ManagedIdentityName = $mi_name
-    principal_id        = $msiPrincipalId
-    client_id           = $msiClientId
-    resource_id         = $managedIdentity.Id
-    resource_id         = $rg_name
-    location            = $location
+    mi_name      = $mi_name
+    principal_id = $msiPrincipalId
+    client_id    = $msiClientId
+    resource_id  = $managedIdentity.Id
+    rg_name      = $rg_name
+    location     = $location
 }
 
 return $result

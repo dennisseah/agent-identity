@@ -80,17 +80,9 @@ if (-not $sponsor_user_id) {
     return
 }
 
-$requiredScopes = @(
-    "AgentIdentity.ReadWrite.All",
-    "AgentIdentityBlueprint.AddRemoveCreds.All",
-    "AgentIdentityBlueprintPrincipal.Create",
-    "AgentIdentityBlueprintPrincipal.ReadWrite.All",
-    "Application.Read.All",
-    "User.Read"
-)
+. ./ConnectMgGraph.ps1
 
-# Authenticate to Microsoft Graph with the required scopes for managing
-Connect-MgGraph -Scopes $requiredScopes -TenantId $tenant_id -ErrorAction Stop
+ConnectMgGraphIdentityScopes -TenantId $tenant_id
 
 
 function Get-BlueprintToken {

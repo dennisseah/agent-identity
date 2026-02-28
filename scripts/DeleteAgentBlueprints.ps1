@@ -27,13 +27,23 @@
 
 # Accept optional parameters; fall back to session variables if not provided.
 param(
+    [string]$tenant_id = $tenant_id,
     [string]$blueprint_name = $blueprint_name
 )
+
+if (-not $tenant_id) {
+    Write-Error "Error: `$tenant_id is not set. Pass it as a parameter or set it in your session."
+    return
+}
 
 if (-not $blueprint_name) {
     Write-Error "Error: `$blueprint_name is not set. Pass it as a parameter or set it in your session."
     return
 }
+
+. ./ConnectMgGraph.ps1
+
+ConnectMgGraphBlueprintScopes -TenantId $tenant_id
 
 # Retrieve all Agent Identity Blueprints from the Microsoft Graph beta endpoint.
 $listParams = @{

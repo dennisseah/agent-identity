@@ -26,13 +26,23 @@
 
 # Accept optional parameters; fall back to session variables if not provided.
 param(
+    [string]$tenant_id = $tenant_id,
     [string]$agent_id_name = $agent_id_name
 )
+
+if (-not $tenant_id) {
+    Write-Error "Error: `$tenant_id is not set. Pass it as a parameter or set it in your session."
+    return
+}
 
 if (-not $agent_id_name) {
     Write-Error "Error: `$agent_id_name is not set. Pass it as a parameter or set it in your session."
     return
 }
+
+. ./ConnectMgGraph.ps1
+
+ConnectMgGraphIdentityScopes -TenantId $tenant_id
 
 # Retrieve all Agent Identities from the Microsoft Graph beta endpoint.
 $listResponse = Invoke-MgGraphRequest -Method GET `

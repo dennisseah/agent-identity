@@ -14,6 +14,19 @@
     Requires the Microsoft Graph PowerShell SDK with an active session.
 #>
 
+param(
+    [string]$tenant_id = $tenant_id
+)
+
+if (-not $tenant_id) {
+    Write-Error "Error: `$tenant_id is not set. Pass it as a parameter or set it in your session."
+    return
+}
+
+. ./ConnectMgGraph.ps1
+
+ConnectMgGraphIdentityScopes -TenantId $tenant_id
+
 # Retrieve all Agent Identities and display as formatted JSON.
 $params = @{
     Method     = "GET"

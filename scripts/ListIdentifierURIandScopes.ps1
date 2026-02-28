@@ -40,13 +40,9 @@ if (-not $blueprint_app_id) {
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$requiredScopes = @(
-    "AgentIdentityBlueprint.ReadWrite.All",
-    "Application.Read.All"
-)
+. ./ConnectMgGraph.ps1
 
-# Authenticate to Microsoft Graph with the required scopes
-Connect-MgGraph -Scopes $requiredScopes -TenantId $tenant_id -ErrorAction Stop -NoWelcome
+ConnectMgGraphBlueprintWriteScopes -TenantId $tenant_id
 
 try {
     $uri = "https://graph.microsoft.com/beta/applications/$blueprint_app_id"
